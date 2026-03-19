@@ -1,16 +1,16 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv");
+const dotenv = require("dotenv"); // Loads environment variables from .env.Secrets (like JWT_SECRET_KEY) should never be hardcoded.
 dotenv.config();
 const User = require("../models/userModel");
 const Post=require("../models/postModel");
 
 
 async function signup(req, res) {
-  const { username, email, password } = req.body;
+  const { username, email, password } = req.body; // Extract signup data from the request JSON body.
   try {
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] }); // Checks if either username or email is already used.
     if (existingUser) {
       return res.status(400).json({ message: "user already exist" });
     }
@@ -24,12 +24,12 @@ async function signup(req, res) {
       password: hashedPassword,
     });
 
-    await newUser.save();
+    await newUser.save(); // Persists user in MongoDB.
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "1h",
-    });
-    res.json({ token, userId: newUser._id });
-  } catch (err) {
+    }); // Creates a JWT with payload { id: userId }, 1-hour expiry.
+    res.json({ token, userId: newUser._id }); // Frontend stores token (e.g., localStorage) and uses it in Authorization.
+  } catch (err) { // Avoids crashing the server and informs the client.
     console.error("Error during signup:", err.message);
     res.status(500).send("Server error!");
   }
